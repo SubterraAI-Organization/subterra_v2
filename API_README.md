@@ -189,17 +189,38 @@ Content-Type: application/json
 
 Body (example):
 ```json
-{ "epochs": 3, "batch_size": 2, "lr": 0.0001, "image_size": 512 }
+{
+  "epochs": 3,
+  "batch_size": 2,
+  "lr": 0.0001,
+  "image_size": 512,
+  "camera_model": "CID CI-600 In-Situ Root Imager",
+  "only_corrected": true,
+  "preserve_aspect_ratio": true
+}
 ```
 
 Uses saved `(image, mask)` pairs in `data/annotations/`, writes a new checkpoint under `data/models/unet/<version>/unet.pth`,
 updates the registry, and hot-reloads the in-memory U-Net for inference.
+
+Tips:
+- Set `camera_model` to avoid mixing cameras/scales (recommended for minirhizotron workflows)
+- Set `only_corrected=true` to train only on masks you actually edited
+- Keep `preserve_aspect_ratio=true` to avoid distortion when resizing
 
 ### Check training job status/logs
 ```http
 GET /train/jobs
 GET /train/jobs/{job_id}
 ```
+
+## Annotation stats (camera coverage)
+
+```http
+GET /annotations/stats
+```
+
+Returns how many annotations exist and whether they include `camera_model` metadata (useful before training with a camera filter).
 
 ## Postgres persistence + dashboard
 
