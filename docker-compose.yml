@@ -1,0 +1,73 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_DB=subterra
+      - POSTGRES_USER=subterra
+      - POSTGRES_PASSWORD=subterra
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - db
+    ports:
+      - "8001:8001"
+    environment:
+      - CORS_ALLOW_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+      - SUBTERRA_ANNOTATIONS_DIR=/app/data/annotations
+      - SUBTERRA_MODELS_DIR=/app/data/models
+      - DATABASE_URL=postgresql+psycopg2://subterra:subterra@db:5432/subterra
+      # API key management / ingestion
+      - SUBTERRA_API_KEY_SECRET=subterra-key-secret-change-me
+      - SUBTERRA_ADMIN_TOKEN=subterra-admin-change-me
+      # Set to 1 to require API keys for /analyze, /batch-analyze, /annotations, /train/unet
+      - SUBTERRA_REQUIRE_API_KEY=0
+    volumes:
+      - ./data/annotations:/app/data/annotations
+      - ./data/models:/app/data/models
+      # Mount your model weights here (optional, but required for /analyze to work)
+      - ./subterra_model/models/saved_models:/app/subterra_model/models/saved_models:ro
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 1G
+    restart: unless-stopped
+
+  gui:
+    build:
+      context: ./gui
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_BASE_URL=http://localhost:8001
+      - NEXT_PUBLIC_GENOTYPE_BASE_URL=http://localhost:8002
+    depends_on:
+      - api
+      - db
+    restart: unless-stopped
+
+  genotype:
+    build:
+      context: ./genotype_service
+      dockerfile: Dockerfile
+    depends_on:
+      - db
+    ports:
+      - "8002:8002"
+    environment:
+      - CORS_ALLOW_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+      - DATABASE_URL=postgresql+psycopg2://subterra:subterra@db:5432/subterra
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
