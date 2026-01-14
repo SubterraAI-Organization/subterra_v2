@@ -1,4 +1,16 @@
 services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - gui
+      - api
+      - genotype
+    restart: unless-stopped
+
   db:
     image: postgres:16-alpine
     environment:
@@ -20,7 +32,7 @@ services:
     ports:
       - "8001:8001"
     environment:
-      - CORS_ALLOW_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+      - CORS_ALLOW_ORIGINS=http://localhost,http://localhost:80,http://127.0.0.1,http://127.0.0.1:80,http://nginx
       - SUBTERRA_ANNOTATIONS_DIR=/app/data/annotations
       - SUBTERRA_MODELS_DIR=/app/data/models
       - DATABASE_URL=postgresql+psycopg2://subterra:subterra@db:5432/subterra
@@ -46,11 +58,11 @@ services:
     build:
       context: ./gui
       dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     environment:
-      - NEXT_PUBLIC_API_BASE_URL=http://localhost:8001
-      - NEXT_PUBLIC_GENOTYPE_BASE_URL=http://localhost:8002
+      - NEXT_PUBLIC_API_BASE_URL=/api
+      - NEXT_PUBLIC_GENOTYPE_BASE_URL=/genotype
     depends_on:
       - api
       - db
@@ -65,7 +77,7 @@ services:
     ports:
       - "8002:8002"
     environment:
-      - CORS_ALLOW_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+      - CORS_ALLOW_ORIGINS=http://localhost,http://localhost:80,http://127.0.0.1,http://127.0.0.1:80,http://nginx
       - DATABASE_URL=postgresql+psycopg2://subterra:subterra@db:5432/subterra
     restart: unless-stopped
 
