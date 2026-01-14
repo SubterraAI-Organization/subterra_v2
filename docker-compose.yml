@@ -29,8 +29,8 @@ services:
       dockerfile: Dockerfile
     depends_on:
       - db
-    ports:
-      - "8001:8001"
+    expose:
+      - "8001"
     environment:
       - CORS_ALLOW_ORIGINS=http://localhost,http://localhost:80,http://127.0.0.1,http://127.0.0.1:80,http://nginx
       - SUBTERRA_ANNOTATIONS_DIR=/app/data/annotations
@@ -74,8 +74,8 @@ services:
       dockerfile: Dockerfile
     depends_on:
       - db
-    ports:
-      - "8002:8002"
+    expose:
+      - "8002"
     environment:
       - CORS_ALLOW_ORIGINS=http://localhost,http://localhost:80,http://127.0.0.1,http://127.0.0.1:80,http://nginx
       - DATABASE_URL=postgresql+psycopg2://subterra:subterra@db:5432/subterra
